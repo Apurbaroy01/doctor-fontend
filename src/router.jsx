@@ -5,6 +5,8 @@ import AuthLayout from "./LayOut/AuthLayout";
 import Login from "./Page/Login/Login";
 import Home from "./Page/Home/Home";
 import DashboardLayout from "./LayOut/DashboardLayout";
+import AppointmentForm from "./Dashboard/Appointment/Appointment";
+import PatientList from "./Dashboard/PatientList/PatientList";
 
 const router = createBrowserRouter([
     {
@@ -24,7 +26,17 @@ const router = createBrowserRouter([
             {
                 index: true,
                 Component: Home,
-            }
+            },
+            {
+                path:"appointment",
+                Component: AppointmentForm
+                
+            },
+            {
+                path:"patientlist",
+                Component: PatientList,
+                
+            },
         ]
     },
 ]);

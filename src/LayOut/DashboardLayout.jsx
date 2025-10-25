@@ -1,6 +1,7 @@
 
 import { NavLink, Outlet } from 'react-router-dom';
 import { AiFillDashboard } from 'react-icons/ai';
+import { FaCalendarCheck, FaUserInjured } from 'react-icons/fa';
 
 
 const DashboardLayout = () => {
@@ -47,7 +48,7 @@ const DashboardLayout = () => {
             </div>
             <div className="drawer-side">
                 <label htmlFor="my-drawer-2" aria-label="close sidebar" className="drawer-overlay"></label>
-                <ul className="menu bg-base-200 text-base-content min-h-full w-80 p-4">
+                <ul className="menu bg-base-200 text-base-content min-h-full w-65 p-4">
                     {/* Sidebar content here */}
                     
 
@@ -55,6 +56,12 @@ const DashboardLayout = () => {
                     <div className="flex flex-col mt-6 space-y-2">
                         <NavLink to="/Dashboard" className={linkClasses}>
                             <AiFillDashboard /> Dashboard
+                        </NavLink>
+                        <NavLink to="/Dashboard/appointment" className={linkClasses}>
+                            <FaCalendarCheck /> Appointment
+                        </NavLink>
+                        <NavLink to="/Dashboard/patientlist" className={linkClasses}>
+                            <FaUserInjured /> Patient
                         </NavLink>
 
                     
