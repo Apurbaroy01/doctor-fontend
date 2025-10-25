@@ -1,15 +1,19 @@
 import React, { useState } from "react";
 import { useForm } from "react-hook-form";
 import { IoMdEye, IoMdEyeOff } from "react-icons/io";
-import { Link, useLocation } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import Lottie from "lottie-react";
 import loginAnim from "../../assets/Signup.json";
+import useAuth from "../../Hook/useAuth";
+
+
 
 const Login = () => {
-    const location = useLocation();
-    const from = location.state || "/";
+    const { signIn } = useAuth();
+
     const [icon, setIcon] = useState(false);
     const [error, setError] = useState("");
+    const navigate = useNavigate();
 
     // ✅ React Hook Form Setup
     const {
@@ -23,13 +27,12 @@ const Login = () => {
     const onSubmit = (data) => {
         console.log("Form Data:", data);
 
-        // Example Auth Call
-        // signIn(data.email, data.password)
-        //   .then(() => {
-        //     reset();
-        //     navigate(from);
-        //   })
-        //   .catch(() => setError("Invalid email or password"));
+        signIn(data.email, data.password)
+            .then(() => {
+                reset();
+                navigate("/Dashboard");
+            })
+            .catch(() => setError("Invalid email or password"));
     };
 
     return (
@@ -66,8 +69,8 @@ const Login = () => {
                                 type="email"
                                 placeholder="Enter your email"
                                 className={`w-full px-4 py-3 rounded-lg text-black bg-white focus:outline-none focus:ring-2 transition-all duration-300 ${errors.email
-                                        ? "border-red-400 focus:ring-red-500 border"
-                                        : "border-transparent focus:ring-indigo-400"
+                                    ? "border-red-400 focus:ring-red-500 border"
+                                    : "border-transparent focus:ring-indigo-400"
                                     }`}
                             />
                             {errors.email && (
@@ -91,8 +94,8 @@ const Login = () => {
                                 type={icon ? "text" : "password"}
                                 placeholder="Enter your password"
                                 className={`w-full px-4 py-3 rounded-lg text-black bg-white focus:outline-none focus:ring-2 transition-all duration-300 ${errors.password
-                                        ? "border-red-400 focus:ring-red-500 border"
-                                        : "border-transparent focus:ring-indigo-400"
+                                    ? "border-red-400 focus:ring-red-500 border"
+                                    : "border-transparent focus:ring-indigo-400"
                                     }`}
                             />
                             <span
