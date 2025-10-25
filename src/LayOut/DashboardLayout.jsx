@@ -1,12 +1,10 @@
-import React from 'react';
-import { NavLink, Outlet } from 'react-router-dom';
 
-import { FaHome, FaBox, FaMoneyBillWave, FaTruck, FaUserEdit, FaUserClock, FaUserCheck, FaUserShield, FaMotorcycle, FaTasks, FaCheckCircle, FaWallet } from "react-icons/fa";
+import { NavLink, Outlet } from 'react-router-dom';
+import { AiFillDashboard } from 'react-icons/ai';
 
 
 const DashboardLayout = () => {
 
-    
 
     const linkClasses = ({ isActive }) =>
         `flex items-center gap-3 px-4 py-2 rounded-lg transition-colors duration-200
@@ -55,26 +53,11 @@ const DashboardLayout = () => {
 
 
                     <div className="flex flex-col mt-6 space-y-2">
-                        <NavLink to="/" className={linkClasses}>
-                            <FaHome /> Home
+                        <NavLink to="/Dashboard" className={linkClasses}>
+                            <AiFillDashboard /> Dashboard
                         </NavLink>
 
-                        <NavLink to="/dashboard/myParcel" className={linkClasses}>
-                            <FaBox /> My Parcels
-                        </NavLink>
-
-                        <NavLink to="/dashboard/paymentHistory" className={linkClasses}>
-                            <FaMoneyBillWave /> Payment History
-                        </NavLink>
-
-                        <NavLink to="/dashboard/tracking" className={linkClasses}>
-                            <FaTruck /> Track a Package
-                        </NavLink>
-
-                        <NavLink to="/dashboard/profile" className={linkClasses}>
-                            <FaUserEdit /> Update Profile
-                        </NavLink>
-
+                    
                         
                     </div>
 

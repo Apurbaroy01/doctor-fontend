@@ -6,6 +6,16 @@ import {
 } from "react-router-dom";
 import router from './router';
 import AuthProvider from './Provider/AuthProvider';
+import "aos/dist/aos.css";
+import Aos from 'aos';
+
+
+Aos.init({
+  duration: 800,
+});
+
+
+
 
 
 
