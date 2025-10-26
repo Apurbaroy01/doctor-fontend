@@ -1,55 +1,109 @@
 import React, { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import AOS from "aos";
 import "aos/dist/aos.css";
-import {
-    FaUser,
-    FaCalendarAlt,
-    FaPhoneAlt,
-    FaMapMarkerAlt,
-    FaMoneyBill,
-    FaSearch,
-} from "react-icons/fa";
+import { FaSearch, FaTrash } from "react-icons/fa";
+import useAxios from "../../Hook/useAxios";
 
 const AppointmentForm = () => {
-    const {
-        register,
-        handleSubmit,
-        reset,
-        formState: { errors },
-    } = useForm();
-
-    const [trackingId, setTrackingId] = useState("");
-    const [appointments, setAppointments] = useState([]);
+    const { register, handleSubmit, reset } = useForm();
     const [showModal, setShowModal] = useState(false);
     const [searchTerm, setSearchTerm] = useState("");
+    const [selectedDate, setSelectedDate] = useState("");
+    const [selectedTime, setSelectedTime] = useState("");
+    const axiosInstance = useAxios();
+    const queryClient = useQueryClient();
 
-    // AOS Animation
+    // ✅ Generate 12-hour time slots (10 min interval)
+    const timeSlots = [];
+    for (let hour = 0; hour < 24; hour++) {
+        for (let minute = 0; minute < 60; minute += 10) {
+            const period = hour < 12 ? "AM" : "PM";
+            const displayHour = hour % 12 === 0 ? 12 : hour % 12;
+            const formattedMinute = minute.toString().padStart(2, "0");
+            timeSlots.push(`${displayHour}:${formattedMinute} ${period}`);
+        }
+    }
+
+    // ✅ Fetch all appointments
+    const { data: appointments = [], isLoading } = useQuery({
+        queryKey: ["appointments"],
+        queryFn: async () => {
+            const res = await axiosInstance.get("/appointments");
+            return res.data;
+        },
+    });
+
+    // ✅ Fetch booked times for selected date
+    const { data: bookedAppointments = [] } = useQuery({
+        queryKey: ["bookedTimes", selectedDate],
+        queryFn: async () => {
+            if (!selectedDate) return [];
+            const res = await axiosInstance.get(`/appointments?date=${selectedDate}`);
+            return res.data;
+        },
+        enabled: !!selectedDate,
+    });
+
+    const bookedTimes = bookedAppointments.map((apt) => apt.time);
+
+    // ✅ Add new appointment
+    const addAppointment = useMutation({
+        mutationFn: async (newAppointment) =>
+            await axiosInstance.post(`/appointments`, newAppointment),
+        onSuccess: () => {
+            queryClient.invalidateQueries(["appointments"]);
+            queryClient.invalidateQueries(["bookedTimes"]);
+            reset();
+            setShowModal(false);
+            setSelectedDate("");
+            setSelectedTime("");
+        },
+    });
+
+    // ✅ Delete appointment
+    const deleteAppointment = useMutation({
+        mutationFn: async (id) =>
+            await axiosInstance.delete(`/appointments/${id}`),
+        onSuccess: () => {
+            queryClient.invalidateQueries(["appointments"]);
+        },
+    });
+
     useEffect(() => {
         AOS.init({ duration: 800, once: true });
     }, []);
 
-    // Random appointment ID
-    const generateTrackingId = () => {
-        const randomId = "APT-" + Math.random().toString(36).substr(2, 8).toUpperCase();
-        setTrackingId(randomId);
-        return randomId;
-    };
-
+    // ✅ Form submit
     const onSubmit = (data) => {
-        const id = generateTrackingId();
-        const appointmentData = { ...data, trackingId: id };
-        setAppointments([...appointments, appointmentData]);
-        reset();
-        setShowModal(false);
+        if (!selectedDate || !selectedTime) {
+            alert("Please select a date and time!");
+            return;
+        }
+
+        const randomId =
+            "APT-" + Math.random().toString(36).substr(2, 8).toUpperCase();
+
+        const newAppointment = {
+            ...data,
+            date: selectedDate,
+            time: selectedTime,
+            trackingId: randomId,
+        };
+
+        addAppointment.mutate(newAppointment);
     };
 
-    // Filter appointments
+    // ✅ Search filter
     const filteredAppointments = appointments.filter(
         (apt) =>
             apt.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            apt.trackingId.toLowerCase().includes(searchTerm.toLowerCase())
+            apt.trackingId?.toLowerCase().includes(searchTerm.toLowerCase())
     );
+
+    if (isLoading)
+        return <p className="text-center mt-10">Loading appointments...</p>;
 
     return (
         <section className="min-h-screen bg-gradient-to-br from-blue-100 to-blue-200 font-[Poppins] px-4 py-8">
@@ -64,9 +118,8 @@ const AppointmentForm = () => {
                     Doctor Appointment System
                 </h2>
 
-                {/* Top Section: Search + Button */}
+                {/* Search + Add Button */}
                 <div className="flex flex-col md:flex-row justify-between items-center gap-4 mb-6">
-                    {/* Search Bar */}
                     <div className="relative w-full md:w-1/2">
                         <FaSearch className="absolute left-3 top-3 text-gray-500" />
                         <input
@@ -77,8 +130,6 @@ const AppointmentForm = () => {
                             className="input input-bordered w-full pl-10"
                         />
                     </div>
-
-                    {/* Open Modal Button */}
                     <button
                         onClick={() => setShowModal(true)}
                         className="btn btn-primary rounded-full px-6"
@@ -88,7 +139,7 @@ const AppointmentForm = () => {
                 </div>
 
                 {/* Appointment Table */}
-                {appointments.length > 0 ? (
+                {filteredAppointments.length > 0 ? (
                     <div className="overflow-x-auto mt-6" data-aos="fade-up">
                         <table className="table table-zebra w-full text-center">
                             <thead className="bg-blue-600 text-white">
@@ -102,41 +153,44 @@ const AppointmentForm = () => {
                                     <th>Mobile</th>
                                     <th>Payment</th>
                                     <th>Tracking ID</th>
+                                    <th>Action</th>
                                 </tr>
                             </thead>
                             <tbody>
-                                {filteredAppointments.length > 0 ? (
-                                    filteredAppointments.map((apt, index) => (
-                                        <tr key={apt.trackingId}>
-                                            <td>{index + 1}</td>
-                                            <td>{apt.name}</td>
-                                            <td>{apt.age}</td>
-                                            <td>{apt.date}</td>
-                                            <td>{apt.time}</td>
-                                            <td>{apt.address}</td>
-                                            <td>{apt.mobile}</td>
-                                            <td>{apt.payment}</td>
-                                            <td className="font-semibold text-blue-700">{apt.trackingId}</td>
-                                        </tr>
-                                    ))
-                                ) : (
-                                    <tr>
-                                        <td colSpan="9" className="py-6 text-gray-500">
-                                            No matching appointments found 😔
+                                {filteredAppointments.map((apt, index) => (
+                                    <tr key={apt._id}>
+                                        <td>{index + 1}</td>
+                                        <td>{apt.name}</td>
+                                        <td>{apt.age}</td>
+                                        <td>{apt.date}</td>
+                                        <td>{apt.time}</td>
+                                        <td>{apt.address}</td>
+                                        <td>{apt.mobile}</td>
+                                        <td>{apt.payment}</td>
+                                        <td className="font-semibold text-blue-700">
+                                            {apt.trackingId}
+                                        </td>
+                                        <td>
+                                            <button
+                                                onClick={() => deleteAppointment.mutate(apt._id)}
+                                                className="btn btn-sm btn-error text-white"
+                                            >
+                                                <FaTrash />
+                                            </button>
                                         </td>
                                     </tr>
-                                )}
+                                ))}
                             </tbody>
                         </table>
                     </div>
                 ) : (
                     <p className="text-center text-gray-600 mt-6">
-                        No appointments yet. Click “Book New Appointment” to add one.
+                        No appointments found 😔
                     </p>
                 )}
             </div>
 
-            {/* DaisyUI Modal */}
+            {/* ✅ Modal */}
             {showModal && (
                 <dialog open className="modal">
                     <div className="modal-box max-w-2xl">
@@ -147,87 +201,73 @@ const AppointmentForm = () => {
                             onSubmit={handleSubmit(onSubmit)}
                             className="grid grid-cols-1 md:grid-cols-2 gap-4"
                         >
-                            {/* Name */}
-                            <label className="input input-bordered flex items-center gap-2 col-span-1">
-                                <FaUser className="text-blue-600" />
-                                <input
-                                    type="text"
-                                    placeholder="Full Name"
-                                    {...register("name", { required: true })}
-                                    className="grow"
-                                />
-                            </label>
-                            {errors.name && <p className="text-red-500 text-sm">Name is required</p>}
+                            <input
+                                {...register("name", { required: true })}
+                                placeholder="Full Name"
+                                className="input input-bordered col-span-1"
+                            />
+                            <input
+                                {...register("age", { required: true })}
+                                type="number"
+                                placeholder="Age"
+                                className="input input-bordered col-span-1"
+                            />
 
-                            {/* Age */}
-                            <label className="input input-bordered flex items-center gap-2 col-span-1">
-                                <span className="font-semibold">Age:</span>
-                                <input
-                                    type="number"
-                                    placeholder="Your Age"
-                                    {...register("age", { required: true, min: 1 })}
-                                    className="grow"
-                                />
-                            </label>
-                            {errors.age && <p className="text-red-500 text-sm">Valid age required</p>}
+                            {/* Date Picker */}
+                            <input
+                                type="date"
+                                value={selectedDate}
+                                onChange={(e) => setSelectedDate(e.target.value)}
+                                className="input input-bordered col-span-2"
+                                required
+                            />
 
-                            {/* Date */}
-                            <label className="input input-bordered flex items-center gap-2 col-span-1">
-                                <FaCalendarAlt className="text-blue-600" />
-                                <input
-                                    type="date"
-                                    {...register("date", { required: true })}
-                                    className="grow"
-                                />
-                            </label>
+                            {/* ✅ Time Slot Selector */}
+                            {selectedDate && (
+                                <div className="col-span-2">
+                                    <h4 className="font-semibold mt-1 mb-2 text-gray-700">
+                                        Select Time Slot:
+                                    </h4>
+                                    <div className="grid grid-cols-3 md:grid-cols-4 gap-2 max-h-40 overflow-y-auto">
+                                        {timeSlots.map((time) => {
+                                            const isBooked = bookedTimes.includes(time);
+                                            return (
+                                                <button
+                                                    key={time}
+                                                    type="button"
+                                                    disabled={isBooked}
+                                                    onClick={() => !isBooked && setSelectedTime(time)}
+                                                    className={`btn btn-sm rounded-md ${isBooked
+                                                            ? "btn-disabled bg-gray-300 text-gray-500 cursor-not-allowed"
+                                                            : selectedTime === time
+                                                                ? "btn-primary text-white"
+                                                                : "btn-outline"
+                                                        }`}
+                                                >
+                                                    {time}
+                                                </button>
+                                            );
+                                        })}
+                                    </div>
+                                </div>
+                            )}
 
-                            {/* Time */}
-                            <label className="input input-bordered flex items-center gap-2 col-span-1">
-                                <FaCalendarAlt className="text-blue-600" />
-                                <input
-                                    type="time"
-                                    {...register("time", { required: true })}
-                                    className="grow"
-                                />
-                            </label>
+                            <input
+                                {...register("address", { required: true })}
+                                placeholder="Address"
+                                className="input input-bordered col-span-2"
+                            />
+                            <input
+                                {...register("mobile", { required: true })}
+                                placeholder="Mobile"
+                                className="input input-bordered col-span-1"
+                            />
+                            <input
+                                {...register("payment", { required: true })}
+                                placeholder="Payment Method"
+                                className="input input-bordered col-span-1"
+                            />
 
-                            {/* Address */}
-                            <label className="input input-bordered flex items-center gap-2 col-span-2">
-                                <FaMapMarkerAlt className="text-blue-600" />
-                                <input
-                                    type="text"
-                                    placeholder="Your Address"
-                                    {...register("address", { required: true })}
-                                    className="grow"
-                                />
-                            </label>
-
-                            {/* Mobile */}
-                            <label className="input input-bordered flex items-center gap-2 col-span-1">
-                                <FaPhoneAlt className="text-blue-600" />
-                                <input
-                                    type="tel"
-                                    placeholder="Mobile Number"
-                                    {...register("mobile", {
-                                        required: true,
-                                        pattern: /^[0-9]{10,15}$/,
-                                    })}
-                                    className="grow"
-                                />
-                            </label>
-
-                            {/* Payment */}
-                            <label className="input input-bordered flex items-center gap-2 col-span-1">
-                                <FaMoneyBill className="text-green-600" />
-                                <input
-                                    type="text"
-                                    placeholder="Payment Method (e.g. Bkash/Nagad)"
-                                    {...register("payment", { required: true })}
-                                    className="grow"
-                                />
-                            </label>
-
-                            {/* Buttons */}
                             <div className="col-span-2 flex justify-end gap-3 mt-4">
                                 <button
                                     type="button"
@@ -237,7 +277,7 @@ const AppointmentForm = () => {
                                     Cancel
                                 </button>
                                 <button type="submit" className="btn btn-primary">
-                                    Confirm Appointment
+                                    Confirm
                                 </button>
                             </div>
                         </form>
