@@ -7,6 +7,8 @@ import Home from "./Page/Home/Home";
 import DashboardLayout from "./LayOut/DashboardLayout";
 import AppointmentForm from "./Dashboard/Appointment/Appointment";
 import PatientList from "./Dashboard/PatientList/PatientList";
+import ProfileSettings from "./Dashboard/ProfileSettings/ProfileSettings";
+
 
 const router = createBrowserRouter([
     {
@@ -35,6 +37,11 @@ const router = createBrowserRouter([
             {
                 path:"patientlist",
                 Component: PatientList,
+                
+            },
+            {
+                path:"profileSetting",
+                Component: ProfileSettings
                 
             },
         ]
