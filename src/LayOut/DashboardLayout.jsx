@@ -97,7 +97,7 @@ const DashboardLayout = () => {
               {/* User Management Dropdown */}
               <div className="collapse collapse-arrow ">
                 <input type="checkbox" />
-                <div className="collapse-title text-base font-semibold flex items-center gap-2">
+                <div className="collapse-title  flex items-center gap-2">
                   <FaUsers className="text-blue-600" /> User Management
                 </div>
                 <div className="collapse-content flex flex-col gap-2">
