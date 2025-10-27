@@ -7,42 +7,78 @@ import {
     FaEye,
     FaSearch,
 } from "react-icons/fa";
+import { FaDeleteLeft } from "react-icons/fa6";
 import AOS from "aos";
 import "aos/dist/aos.css";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import useAxios from "../../Hook/useAxios";
+import { isSameDay, parseISO, format } from "date-fns";
+import { ToastContainer, toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 const PatientList = () => {
     const [search, setSearch] = useState("");
+    const [selectedDate, setSelectedDate] = useState("");
     const [filteredPatients, setFilteredPatients] = useState([]);
+    const [currentPage, setCurrentPage] = useState(1);
+    const axiosSecure = useAxios();
+    const queryClient = useQueryClient();
+    const patientsPerPage = 10;
 
-    const patients = [
-        { id: 1, name: "John Doe", age: 34, mobile: "01710000001", address: "Dhaka", date: "2025-10-20" },
-        { id: 2, name: "Jane Smith", age: 28, mobile: "01710000002", address: "Chittagong", date: "2025-10-18" },
-        { id: 3, name: "Ali Hasan", age: 45, mobile: "01710000003", address: "Rajshahi", date: "2025-10-22" },
-        { id: 4, name: "Nusrat Jahan", age: 30, mobile: "01710000004", address: "Khulna", date: "2025-10-21" },
-        { id: 5, name: "Rahim Uddin", age: 52, mobile: "01710000005", address: "Sylhet", date: "2025-10-19" },
-        { id: 6, name: "Karim Ali", age: 39, mobile: "01710000006", address: "Barisal", date: "2025-10-23" },
-        { id: 7, name: "Mitu Akter", age: 26, mobile: "01710000007", address: "Rangpur", date: "2025-10-25" },
-        { id: 8, name: "Sakib Khan", age: 31, mobile: "01710000008", address: "Gazipur", date: "2025-10-17" },
-        { id: 9, name: "Rafi Ahmed", age: 40, mobile: "01710000009", address: "Narsingdi", date: "2025-10-16" },
-        { id: 10, name: "Tania Rahman", age: 29, mobile: "01710000010", address: "Comilla", date: "2025-10-24" },
-    ];
+    // ✅ Fetch patients
+    const { data: patients = [], isLoading } = useQuery({
+        queryKey: ["appointmentsList"],
+        queryFn: async () => {
+            const res = await axiosSecure.get("/appointmentsList");
+            return res.data;
+        },
+    });
 
-    // ✅ AOS Initialize
+    // ✅ Delete mutation
+    const deleteMutation = useMutation({
+        mutationFn: async (id) => {
+            await axiosSecure.delete(`/appointments/${id}`);
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries(["appointmentsList"]);
+            toast.success("Patient deleted successfully");
+        },
+        onError: () => {
+            toast.error("Failed to delete patient");
+        },
+    });
+
     useEffect(() => {
         AOS.init({ duration: 800, once: true });
-        setFilteredPatients(patients);
     }, []);
 
-    // ✅ Search filter logic
+    // ✅ Search + Date filter
     useEffect(() => {
-        const result = patients.filter(
-            (p) =>
-                p.name.toLowerCase().includes(search.toLowerCase()) ||
-                p.address.toLowerCase().includes(search.toLowerCase()) ||
-                p.mobile.includes(search)
-        );
+        const result = patients.filter((p) => {
+            const matchesSearch =
+                p.name?.toLowerCase().includes(search.toLowerCase()) ||
+                p.address?.toLowerCase().includes(search.toLowerCase()) ||
+                p.mobile?.includes(search);
+
+            const matchesDate = selectedDate
+                ? isSameDay(parseISO(p.date), parseISO(selectedDate))
+                : true;
+
+            return matchesSearch && matchesDate;
+        });
         setFilteredPatients(result);
-    }, [search]);
+        setCurrentPage(1);
+    }, [search, selectedDate, patients]);
+
+    const handleDelete = (id) => deleteMutation.mutate(id);
+
+    // ✅ Pagination Logic
+    const indexOfLast = currentPage * patientsPerPage;
+    const indexOfFirst = indexOfLast - patientsPerPage;
+    const currentPatients = filteredPatients.slice(indexOfFirst, indexOfLast);
+    const totalPages = Math.ceil(filteredPatients.length / patientsPerPage);
+
+    const handlePageChange = (page) => setCurrentPage(page);
 
     return (
         <section className="min-h-screen bg-gradient-to-br from-blue-50 to-blue-100 font-[Poppins] px-4 py-8">
@@ -50,7 +86,8 @@ const PatientList = () => {
                 className="bg-white shadow-2xl rounded-2xl p-8 w-full max-w-6xl mx-auto"
                 data-aos="zoom-in"
             >
-                {/* Title */}
+                <ToastContainer position="top-center" autoClose={1500} />
+
                 <h2
                     className="text-3xl font-bold text-blue-700 flex items-center gap-2 mb-6"
                     data-aos="fade-down"
@@ -59,72 +96,98 @@ const PatientList = () => {
                     All Patients
                 </h2>
 
-                {/* 🔍 Search Bar */}
-                <div
-                    className="flex items-center gap-2 mb-6 border border-blue-300 rounded-full px-4 py-2 w-full md:w-1/2 bg-blue-50"
-                    data-aos="fade-right"
-                >
-                    <FaSearch className="text-blue-600" />
-                    <input
-                        type="text"
-                        placeholder="Search by name, address, or mobile..."
-                        value={search}
-                        onChange={(e) => setSearch(e.target.value)}
-                        className="bg-transparent focus:outline-none w-full"
-                    />
+                {/* 🔍 Search + Date Filter */}
+                <div className="flex flex-col md:flex-row gap-3 mb-6 items-center" data-aos="fade-right">
+                    <div className="flex items-center gap-2 border border-blue-300 rounded-full px-4 py-2 w-full md:w-1/2 bg-blue-50">
+                        <FaSearch className="text-blue-600" />
+                        <input
+                            type="text"
+                            placeholder="Search by name, address, or mobile..."
+                            value={search}
+                            onChange={(e) => setSearch(e.target.value)}
+                            className="bg-transparent focus:outline-none w-full"
+                        />
+                    </div>
+
+                    <div className="flex items-center gap-2 border border-blue-300 rounded-full px-4 py-2 w-full md:w-1/3 bg-blue-50">
+                        <FaCalendarAlt className="text-blue-600" />
+                        <input
+                            type="date"
+                            value={selectedDate}
+                            onChange={(e) => setSelectedDate(e.target.value)}
+                            className="bg-transparent focus:outline-none w-full"
+                        />
+                    </div>
                 </div>
 
-                {/* 🩺 Patient Table */}
-                <div className="overflow-x-auto" data-aos="fade-up">
-                    <table className="table table-zebra w-full">
-                        <thead className="bg-blue-600 text-white">
-                            <tr>
-                                <th>#</th>
-                                <th>Name</th>
-                                <th>Age</th>
-                                <th>
-                                    <FaPhoneAlt className="inline-block mr-1" /> Mobile
-                                </th>
-                                <th>
-                                    <FaMapMarkerAlt className="inline-block mr-1" /> Address
-                                </th>
-                                <th>
-                                    <FaCalendarAlt className="inline-block mr-1" /> Date
-                                </th>
-                                <th>Action</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {filteredPatients.length > 0 ? (
-                                filteredPatients.map((p, index) => (
-                                    <tr
-                                        key={p.id}
-                                        className="hover:bg-blue-50 transition-all duration-200"
-                                        data-aos="fade-up"
-                                    >
-                                        <td>{index + 1}</td>
-                                        <td className="font-semibold">{p.name}</td>
-                                        <td>{p.age}</td>
-                                        <td>{p.mobile}</td>
-                                        <td>{p.address}</td>
-                                        <td>{p.date}</td>
-                                        <td>
-                                            <button className="btn btn-sm btn-outline btn-primary flex items-center gap-1">
-                                                <FaEye /> View
-                                            </button>
-                                        </td>
+                {/* ✅ Main Table */}
+                {isLoading ? (
+                    <div className="flex justify-center py-10">
+                        <span className="loading loading-spinner loading-lg text-blue-600"></span>
+                    </div>
+                ) : filteredPatients.length === 0 ? (
+                    <div className="text-center py-10 text-gray-600 text-lg">No patients found.</div>
+                ) : (
+                    <>
+                        <div className="overflow-x-auto mb-10" data-aos="fade-up">
+                            <table className="table table-zebra w-full">
+                                <thead className="bg-blue-600 text-white">
+                                    <tr>
+                                        <th>#</th>
+                                        <th>Name</th>
+                                        <th>Age</th>
+                                        <th><FaPhoneAlt className="inline-block mr-1" /> Mobile</th>
+                                        <th><FaMapMarkerAlt className="inline-block mr-1" /> Address</th>
+                                        <th><FaCalendarAlt className="inline-block mr-1" /> Date</th>
+                                        <th>Action</th>
                                     </tr>
-                                ))
-                            ) : (
-                                <tr>
-                                    <td colSpan="7" className="text-center py-4 text-gray-500">
-                                        No patients found 😔
-                                    </td>
-                                </tr>
-                            )}
-                        </tbody>
-                    </table>
-                </div>
+                                </thead>
+                                <tbody>
+                                    {currentPatients.map((p, index) => (
+                                        <tr key={p._id || index} className="hover:bg-blue-50 transition-all duration-200">
+                                            <td>{indexOfFirst + index + 1}</td>
+                                            <td className="font-semibold">{p.name}</td>
+                                            <td>{p.age}</td>
+                                            <td>{p.mobile}</td>
+                                            <td>{p.address}</td>
+                                            <td>{format(parseISO(p.date), "MMMM dd, yyyy")}</td>
+                                            <td className="flex gap-2">
+                                                <button className="btn btn-sm btn-outline btn-primary flex items-center gap-1">
+                                                    <FaEye /> View
+                                                </button>
+                                                <button
+                                                    onClick={() => handleDelete(p._id)}
+                                                    disabled={deleteMutation.isLoading}
+                                                    className="btn btn-sm btn-outline btn-error flex items-center gap-1"
+                                                >
+                                                    <FaDeleteLeft /> Delete
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+
+                        {/* ✅ Pagination */}
+                        {totalPages > 1 && (
+                            <div className="flex justify-center gap-2 mt-4">
+                                {Array.from({ length: totalPages }, (_, i) => (
+                                    <button
+                                        key={i}
+                                        onClick={() => handlePageChange(i + 1)}
+                                        className={`btn btn-sm ${currentPage === i + 1
+                                                ? "bg-blue-600 text-white"
+                                                : "btn-outline btn-primary"
+                                            }`}
+                                    >
+                                        {i + 1}
+                                    </button>
+                                ))}
+                            </div>
+                        )}
+                    </>
+                )}
             </div>
         </section>
     );
