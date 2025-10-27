@@ -3,7 +3,8 @@ import { useForm } from "react-hook-form";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import AOS from "aos";
 import "aos/dist/aos.css";
-import { FaSearch, FaTrash } from "react-icons/fa";
+import { FaSearch } from "react-icons/fa";
+import { RiPagesLine } from "react-icons/ri";
 import useAxios from "../../Hook/useAxios";
 
 const AppointmentForm = () => {
@@ -70,6 +71,16 @@ const AppointmentForm = () => {
             queryClient.invalidateQueries(["appointments"]);
         },
     });
+
+    // ✅ Update appointment status
+    const updateStatus = useMutation({
+        mutationFn: async ({ id, status }) =>
+            await axiosInstance.patch(`/appointments/${id}`, { status }),
+        onSuccess: () => {
+            queryClient.invalidateQueries(["appointments"]);
+        },
+    });
+
 
     useEffect(() => {
         AOS.init({ duration: 800, once: true });
@@ -147,12 +158,13 @@ const AppointmentForm = () => {
                                     <th>#</th>
                                     <th>Name</th>
                                     <th>Age</th>
-                                    <th>Date</th>
+                                    {/* <th>Date</th> */}
                                     <th>Time</th>
                                     <th>Address</th>
                                     <th>Mobile</th>
                                     <th>Payment</th>
                                     <th>Tracking ID</th>
+                                    <th></th>
                                     <th>Action</th>
                                 </tr>
                             </thead>
@@ -160,22 +172,37 @@ const AppointmentForm = () => {
                                 {filteredAppointments.map((apt, index) => (
                                     <tr key={apt._id}>
                                         <td>{index + 1}</td>
-                                        <td>{apt.name}</td>
+                                        <td> {apt.name} </td>
                                         <td>{apt.age}</td>
-                                        <td>{apt.date}</td>
+                                        {/* <td>{apt.date}</td> */}
                                         <td>{apt.time}</td>
                                         <td>{apt.address}</td>
                                         <td>{apt.mobile}</td>
                                         <td>{apt.payment}</td>
-                                        <td className="font-semibold text-blue-700">
+                                        <td className=" text-blue-700">
                                             {apt.trackingId}
                                         </td>
+
+                                        <td>
+                                            <select
+                                                defaultValue={apt.status || "Pending"}
+                                                onChange={(e) =>
+                                                    updateStatus.mutate({ id: apt._id, status: e.target.value })
+                                                }
+                                                className={apt.status =="Completed"? "text-teal-500": ""}
+                                            >
+                                                <option>Pending</option>
+                                                <option>Completed</option>
+                                            </select>
+                                        </td>
+
+
                                         <td>
                                             <button
                                                 onClick={() => deleteAppointment.mutate(apt._id)}
                                                 className="btn btn-sm btn-error text-white"
                                             >
-                                                <FaTrash />
+                                                <RiPagesLine />
                                             </button>
                                         </td>
                                     </tr>
@@ -238,10 +265,10 @@ const AppointmentForm = () => {
                                                     disabled={isBooked}
                                                     onClick={() => !isBooked && setSelectedTime(time)}
                                                     className={`btn btn-sm rounded-md ${isBooked
-                                                            ? "btn-disabled bg-gray-300 text-gray-500 cursor-not-allowed"
-                                                            : selectedTime === time
-                                                                ? "btn-primary text-white"
-                                                                : "btn-outline"
+                                                        ? "btn-disabled bg-gray-300 text-gray-500 cursor-not-allowed"
+                                                        : selectedTime === time
+                                                            ? "btn-primary text-white"
+                                                            : "btn-outline"
                                                         }`}
                                                 >
                                                     {time}
