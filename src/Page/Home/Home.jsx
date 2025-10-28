@@ -1,4 +1,3 @@
-
 import {
     FaCalendarCheck,
     FaUserMd,
@@ -7,16 +6,16 @@ import {
     FaFileInvoice,
     FaPrescriptionBottleAlt,
 } from "react-icons/fa";
+import { Link } from "react-router-dom";
 
 const Home = () => {
-    
-
     const cards = [
         {
             title: "Appointment",
             count: 10,
             icon: <FaCalendarCheck className="text-4xl text-blue-800" />,
             btnText: "View Appointment List",
+            link: "appointment", 
             aos: "fade-up",
         },
         {
@@ -24,6 +23,7 @@ const Home = () => {
             count: 9,
             icon: <FaPrescriptionBottleAlt className="text-4xl text-blue-800" />,
             btnText: "View Prescription List",
+            link: "/",
             aos: "fade-up",
         },
         {
@@ -31,6 +31,7 @@ const Home = () => {
             count: 2,
             icon: <FaFileInvoice className="text-4xl text-blue-800" />,
             btnText: "View Invoice List",
+            link: "/",
             aos: "fade-up",
         },
         {
@@ -38,6 +39,7 @@ const Home = () => {
             count: 1,
             icon: <FaUserInjured className="text-4xl text-blue-800" />,
             btnText: "View Patient List",
+            link: "/Dashboard/patientlist",
             aos: "fade-up",
         },
         {
@@ -45,6 +47,7 @@ const Home = () => {
             count: 2,
             icon: <FaUserMd className="text-4xl text-blue-800" />,
             btnText: "View Doctor List",
+            link: "/",
             aos: "fade-up",
         },
         {
@@ -52,6 +55,7 @@ const Home = () => {
             count: 1,
             icon: <FaPills className="text-4xl text-blue-800" />,
             btnText: "View Drug List",
+            link: "/",
             aos: "fade-up",
         },
     ];
@@ -78,9 +82,14 @@ const Home = () => {
                             <h2 className="card-title text-gray-700">{card.title}</h2>
                             <p className="text-2xl font-bold text-blue-900">{card.count}</p>
                         </div>
-                        <div className="bg-blue-900 py-2 text-white text-center rounded-b-lg cursor-pointer hover:bg-blue-800 transition">
+
+                        {/* ✅ Button wrapped with Link */}
+                        <Link
+                            to={card.link}
+                            className="block bg-blue-900 py-2 text-white text-center rounded-b-lg hover:bg-blue-800 transition"
+                        >
                             {card.btnText}
-                        </div>
+                        </Link>
                     </div>
                 ))}
             </div>

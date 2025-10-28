@@ -3,13 +3,14 @@ import { useEffect, useState } from "react";
 import useAxios from "../../Hook/useAxios";
 import { FaUserMd, FaCalendarAlt, FaFilePrescription } from "react-icons/fa";
 import { RiTimeLine } from "react-icons/ri";
-import { useQuery } from "@tanstack/react-query";
+import { QueryClient, useMutation, useQuery } from "@tanstack/react-query";
 
 const AppointmentDetails = () => {
   const { id } = useParams();
   const axiosSecure = useAxios();
   const [appointment, setAppointment] = useState(null);
   const [loading, setLoading] = useState(true);
+ 
 
   // Fetch single appointment by ID
   useEffect(() => {
@@ -27,7 +28,7 @@ const AppointmentDetails = () => {
   }, [id, axiosSecure]);
 
   // Fetch all appointments under the same trackingId
-  const { data: appointments = [], isLoading: historyLoading } = useQuery({
+  const { data: appointments = [], isLoading: historyLoading, refetch } = useQuery({
     queryKey: ["appointments", appointment?.trackingId],
     queryFn: async () => {
       if (!appointment?.trackingId) return [];
@@ -35,6 +36,16 @@ const AppointmentDetails = () => {
       return res.data;
     },
     enabled: !!appointment?.trackingId,
+  });
+
+  // ✅ Update appointment status
+  const updateStatus = useMutation({
+    mutationFn: async ({ id, status }) =>
+      await axiosSecure.patch(`/appointments/${id}`, { status }),
+    onSuccess: () => {
+      QueryClient.invalidateQueries(["appointments"]);
+      refetch();
+    },
   });
 
   if (loading || historyLoading) return <p className="text-center py-10">Loading...</p>;
@@ -47,19 +58,62 @@ const AppointmentDetails = () => {
       </h2>
 
       {/* Patient Info */}
-      <div className="card bg-base-200 shadow-lg p-5 mb-8">
-        <h3 className="text-lg font-semibold mb-2 flex items-center gap-2">
-          <FaUserMd /> Patient Information
-        </h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <p><strong>Name:</strong> {appointment.name}</p>
-          <p><strong>Phone:</strong> {appointment.mobile}</p>
-          <p><strong>Date:</strong> {appointment.date}</p>
-          <p><strong>Time:</strong> {appointment.time}</p>
-          <p><strong>Payment:</strong> {appointment.payment} BDT</p>
-          <p><strong>Tracking ID:</strong> {appointment.trackingId}</p>
+      <div className="card bg-base-100 shadow-xl border border-base-300 p-6 mb-10">
+        <div className="flex items-center justify-between mb-5">
+          <h3 className="text-xl font-bold flex items-center gap-2 text-primary">
+            <FaUserMd className="text-secondary text-lg" /> Patient Information
+          </h3>
+
+          {/* Status Dropdown */}
+          <div className="flex items-center gap-2 ">
+            <label className="font-semibold text-sm text-gray-600">Status:</label>
+            <select
+              defaultValue={appointment.status || "Pending"}
+              onChange={(e) =>
+                updateStatus.mutate({ id: appointment._id, status: e.target.value })
+              }
+              className="select select-sm select-bordered font-medium text-gray-700"
+            >
+              <option value="Pending" className="text-warning">Pending</option>
+              <option value="Completed" className="text-success">Completed</option>
+            </select>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
+          <div className="p-3 rounded-lg bg-base-200">
+            <p className="text-sm text-gray-500">Name:</p>
+            <p className="font-semibold">{appointment.name}</p>
+          </div>
+
+          <div className="p-3 rounded-lg bg-base-200">
+            <p className="text-sm text-gray-500">Phone:</p>
+            <p className="font-semibold">{appointment.mobile}</p>
+          </div>
+
+          <div className="p-3 rounded-lg bg-base-200">
+            <p className="text-sm text-gray-500">Date:</p>
+            <p className="font-semibold">{appointment.date}</p>
+          </div>
+
+          <div className="p-3 rounded-lg bg-base-200">
+            <p className="text-sm text-gray-500">Time:</p>
+            <p className="font-semibold">{appointment.time}</p>
+          </div>
+
+          <div className="p-3 rounded-lg bg-base-200">
+            <p className="text-sm text-gray-500">Payment:</p>
+            <p className="font-semibold text-primary">{appointment.payment} BDT</p>
+          </div>
+
+          <div className="p-3 rounded-lg bg-base-200">
+            <p className="text-sm text-gray-500">Tracking ID:</p>
+            <p className="font-semibold">{appointment.trackingId}</p>
+          </div>
         </div>
       </div>
+
+
 
       {/* Tabs */}
       <div role="tablist" className="tabs tabs-lifted">

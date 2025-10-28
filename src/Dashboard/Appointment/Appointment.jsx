@@ -29,7 +29,7 @@ const AppointmentForm = () => {
     }
 
     // ✅ Fetch all appointments
-    const { data: appointments = [], isLoading } = useQuery({
+    const { data: appointments = [], isLoading, refetch } = useQuery({
         queryKey: ["appointments"],
         queryFn: async () => {
             const res = await axiosInstance.get("/appointments");
@@ -58,6 +58,7 @@ const AppointmentForm = () => {
             queryClient.invalidateQueries(["appointments"]);
             queryClient.invalidateQueries(["bookedTimes"]);
             reset();
+            refetch();
             setShowModal(false);
             setSelectedDate("");
             setSelectedTime("");
@@ -79,6 +80,7 @@ const AppointmentForm = () => {
             await axiosInstance.patch(`/appointments/${id}`, { status }),
         onSuccess: () => {
             queryClient.invalidateQueries(["appointments"]);
+            refetch();
         },
     });
 
