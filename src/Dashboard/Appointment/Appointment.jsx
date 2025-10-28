@@ -3,9 +3,10 @@ import { useForm } from "react-hook-form";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import AOS from "aos";
 import "aos/dist/aos.css";
-import { FaSearch } from "react-icons/fa";
+import { FaFilePrescription, FaSearch } from "react-icons/fa";
 import { RiPagesLine } from "react-icons/ri";
 import useAxios from "../../Hook/useAxios";
+import { Link } from "react-router-dom";
 
 const AppointmentForm = () => {
     const { register, handleSubmit, reset } = useForm();
@@ -63,14 +64,14 @@ const AppointmentForm = () => {
         },
     });
 
-    // ✅ Delete appointment
-    const deleteAppointment = useMutation({
-        mutationFn: async (id) =>
-            await axiosInstance.delete(`/appointments/${id}`),
-        onSuccess: () => {
-            queryClient.invalidateQueries(["appointments"]);
-        },
-    });
+    // // ✅ Delete appointment
+    // const deleteAppointment = useMutation({
+    //     mutationFn: async (id) =>
+    //         await axiosInstance.delete(`/appointments/${id}`),
+    //     onSuccess: () => {
+    //         queryClient.invalidateQueries(["appointments"]);
+    //     },
+    // });
 
     // ✅ Update appointment status
     const updateStatus = useMutation({
@@ -93,14 +94,13 @@ const AppointmentForm = () => {
             return;
         }
 
-        const randomId =
-            "APT-" + Math.random().toString(36).substr(2, 8).toUpperCase();
+        // const randomId = "APT-" + Math.random().toString(36).substr(2, 8).toUpperCase();
 
         const newAppointment = {
             ...data,
             date: selectedDate,
             time: selectedTime,
-            trackingId: randomId,
+            // trackingId: randomId,
         };
 
         addAppointment.mutate(newAppointment);
@@ -198,12 +198,12 @@ const AppointmentForm = () => {
 
 
                                         <td>
-                                            <button
-                                                onClick={() => deleteAppointment.mutate(apt._id)}
-                                                className="btn btn-sm btn-error text-white"
+                                            <Link to={`${apt._id}`}
+                                                
+                                                className="btn btn-sm btn-error text-xl text-white bg-red-400"
                                             >
-                                                <RiPagesLine />
-                                            </button>
+                                                <FaFilePrescription />
+                                            </Link>
                                         </td>
                                     </tr>
                                 ))}

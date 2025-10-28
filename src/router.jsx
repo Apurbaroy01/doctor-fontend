@@ -8,6 +8,7 @@ import DashboardLayout from "./LayOut/DashboardLayout";
 import AppointmentForm from "./Dashboard/Appointment/Appointment";
 import PatientList from "./Dashboard/PatientList/PatientList";
 import ProfileSettings from "./Dashboard/ProfileSettings/ProfileSettings";
+import AppointmentDetails from "./Dashboard/AppointmentDetails/AppointmentDetails";
 
 
 const router = createBrowserRouter([
@@ -42,6 +43,11 @@ const router = createBrowserRouter([
             {
                 path:"profileSetting",
                 Component: ProfileSettings
+                
+            },
+            {
+                path:"appointment/:id",
+                Component: AppointmentDetails,
                 
             },
         ]
