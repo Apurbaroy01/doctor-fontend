@@ -11,7 +11,7 @@ const AppointmentDetails = () => {
   const [appointment, setAppointment] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  // Get single appointment by ID
+  // Fetch single appointment by ID
   useEffect(() => {
     const fetchAppointment = async () => {
       try {
@@ -26,12 +26,12 @@ const AppointmentDetails = () => {
     fetchAppointment();
   }, [id, axiosSecure]);
 
-  // Get all appointments under same trackingId (History)
+  // Fetch all appointments under the same trackingId
   const { data: appointments = [], isLoading: historyLoading } = useQuery({
     queryKey: ["appointments", appointment?.trackingId],
     queryFn: async () => {
       if (!appointment?.trackingId) return [];
-      const res = await axiosSecure.get(`/appointments?trackingId=${appointment.trackingId}`);
+      const res = await axiosSecure.get(`/patient?trackingId=${appointment.trackingId}`);
       return res.data;
     },
     enabled: !!appointment?.trackingId,
@@ -40,18 +40,13 @@ const AppointmentDetails = () => {
   if (loading || historyLoading) return <p className="text-center py-10">Loading...</p>;
   if (!appointment) return <p className="text-center text-error">No appointment found.</p>;
 
-  // Sort history chronologically
-  const sortedAppointments = [...appointments].sort(
-    (a, b) => new Date(a.date) - new Date(b.date)
-  );
-
   return (
     <div className="p-6 max-w-5xl mx-auto">
       <h2 className="text-2xl font-bold text-center mb-6 text-primary">
         Appointment Details
       </h2>
 
-      {/* Patient Info Card */}
+      {/* Patient Info */}
       <div className="card bg-base-200 shadow-lg p-5 mb-8">
         <h3 className="text-lg font-semibold mb-2 flex items-center gap-2">
           <FaUserMd /> Patient Information
@@ -77,10 +72,7 @@ const AppointmentDetails = () => {
           aria-label="Prescription"
           defaultChecked
         />
-        <div
-          role="tabpanel"
-          className="tab-content bg-base-100 border-base-300 rounded-box p-6"
-        >
+        <div role="tabpanel" className="tab-content bg-base-100 border-base-300 rounded-box p-6">
           <h3 className="text-xl font-semibold mb-4 flex items-center gap-2">
             <FaFilePrescription /> Prescription
           </h3>
@@ -106,17 +98,14 @@ const AppointmentDetails = () => {
           className="tab"
           aria-label="Appointment History"
         />
-        <div
-          role="tabpanel"
-          className="tab-content bg-base-100 border-base-300 rounded-box p-6"
-        >
+        <div role="tabpanel" className="tab-content bg-base-100 border-base-300 rounded-box p-6">
           <h3 className="text-xl font-semibold mb-4 flex items-center gap-2">
             <FaCalendarAlt /> Appointment History
           </h3>
 
-          {sortedAppointments.length > 0 ? (
+          {appointments.length > 0 ? (
             <ul className="timeline timeline-snap-icon max-md:timeline-compact timeline-vertical">
-              {sortedAppointments.map((item, index) => (
+              {appointments.map((item, index) => (
                 <li key={index}>
                   <div className="timeline-middle">
                     <FaCalendarAlt className="text-primary text-lg" />
@@ -151,17 +140,14 @@ const AppointmentDetails = () => {
           className="tab"
           aria-label="Timeline"
         />
-        <div
-          role="tabpanel"
-          className="tab-content bg-base-100 border-base-300 rounded-box p-6"
-        >
+        <div role="tabpanel" className="tab-content bg-base-100 border-base-300 rounded-box p-6">
           <h3 className="text-xl font-semibold mb-4 flex items-center gap-2">
             <RiTimeLine /> Timeline
           </h3>
 
-          {sortedAppointments.length > 0 ? (
+          {appointments.length > 0 ? (
             <ul className="timeline timeline-snap-icon max-md:timeline-compact timeline-vertical">
-              {sortedAppointments.map((step, index) => (
+              {appointments.map((step, index) => (
                 <li key={index}>
                   <div className="timeline-middle">
                     <RiTimeLine className="text-secondary text-lg" />
