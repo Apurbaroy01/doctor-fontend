@@ -3,81 +3,131 @@ import useAxios from "../../Hook/useAxios";
 
 
 export default function PatientSearchForm() {
-  const axios = useAxios();
-  const [query, setQuery] = useState("");
-  const [results, setResults] = useState([]);
-  const [selected, setSelected] = useState(null);
-  const [loading, setLoading] = useState(false);
+    const axios = useAxios();
+    const [query, setQuery] = useState("");
+    const [results, setResults] = useState([]);
+    const [selected, setSelected] = useState({
+        name: "",
+        age: "",
+        address: "",
+        mobile: "",
+    });
 
-  const handleSearch = async (value) => {
-    setQuery(value);
-    setSelected(null);
+    // 🔹 সার্চ হ্যান্ডলার
+    const handleSearch = async (value) => {
+        setQuery(value);
+        if (value.trim().length < 2) {
+            setResults([]);
+            return;
+        }
 
-    if (value.trim().length < 2) {
-      setResults([]);
-      return;
-    }
+        try {
+            const res = await axios.get(`/patients/search?q=${value}`);
+            setResults(res.data);
+        } catch (err) {
+            console.error(err);
+        }
+    };
 
-    setLoading(true);
-    try {
-      const res = await axios.get(`/patients/search?q=${value}`);
-      setResults(res.data);
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setLoading(false);
-    }
-  };
+    // 🔹 সিলেক্ট করলে ফর্মে ডাটা বসানো
+    const handleSelect = (patient) => {
+        setSelected({
+            name: patient.name,
+            age: patient.age,
+            address: patient.address,
+            mobile: patient.mobile,
+        });
+        setQuery(patient.mobile); // ইনপুটে মোবাইল বসানো
+        setResults([]); // সাজেশন হাইড করা
+    };
 
-  const handleSelect = (patient) => {
-    setSelected(patient);
-    setResults([]);
-    setQuery(patient.patientId || patient.mobile || "");
-  };
+    // 🔹 ফর্ম সাবমিট (উদাহরণ হিসেবে শুধু console)
+    const handleSubmit = (e) => {
+        e.preventDefault();
+        console.log("Form Data:", selected);
+    };
 
-  return (
-    <div className="max-w-lg mx-auto p-4">
-      <label className="form-control w-full">
-        <input
-          type="text"
-          placeholder="Enter Patient ID or Mobile..."
-          className="input input-bordered w-full"
-          value={query}
-          onChange={(e) => handleSearch(e.target.value)}
-        />
-      </label>
+    return (
+        <div className="max-w-lg mx-auto p-4">
+            {/* সার্চ ফিল্ড */}
+            <label className="form-control w-full">
+                <input
+                    type="text"
+                    placeholder="Search by Mobile Number..."
+                    className="input input-bordered w-full"
+                    value={query}
+                    onChange={(e) => handleSearch(e.target.value)}
+                />
+            </label>
 
-      {loading && <p className="mt-2 text-gray-500 text-sm">Searching...</p>}
+            {/* সার্চ রেজাল্ট */}
+            {results.length > 0 && (
+                <ul className="menu bg-base-200 mt-2 rounded-box shadow-md">
+                    {results.map((p) => (
+                        <li key={p._id} onClick={() => handleSelect(p)}>
+                            <a>
+                                {p.mobile} - {p.name}
+                            </a>
+                        </li>
+                    ))}
+                </ul>
+            )}
 
-      {results.length > 0 && (
-        <ul className="menu bg-base-200 mt-2 rounded-box shadow-md">
-          {results.map((p) => (
-            <li key={p._id} onClick={() => handleSelect(p)}>
-              <a>
-                {p.patientId || "N/A"} - {p.name} ({p.mobile})
-              </a>
-            </li>
-          ))}
-        </ul>
-      )}
+            {/* ফর্ম */}
+            <form
+                onSubmit={handleSubmit}
+                className="bg-base-100 shadow-md p-4 mt-4 rounded-lg"
+            >
+                <h2 className="text-xl font-semibold mb-4 text-blue-600">
+                    Patient Information
+                </h2>
 
-      {selected && (
-        <div className="card bg-base-100 shadow-md p-4 mt-4">
-          <h2 className="text-xl font-semibold mb-2">Patient Details</h2>
-          <p>
-            <b>Name:</b> {selected.name}
-          </p>
-          <p>
-            <b>Age:</b> {selected.age}
-          </p>
-          <p>
-            <b>Mobile:</b> {selected.mobile}
-          </p>
-          <p>
-            <b>Address:</b> {selected.address}
-          </p>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <input
+                        type="text"
+                        placeholder="Full Name"
+                        value={selected.name}
+                        onChange={(e) =>
+                            setSelected({ ...selected, name: e.target.value })
+                        }
+                        className="input input-bordered w-full"
+                    />
+
+                    <input
+                        type="number"
+                        placeholder="Age"
+                        value={selected.age}
+                        onChange={(e) =>
+                            setSelected({ ...selected, age: e.target.value })
+                        }
+                        className="input input-bordered w-full"
+                    />
+
+                    <input
+                        type="text"
+                        placeholder="Address"
+                        value={selected.address}
+                        onChange={(e) =>
+                            setSelected({ ...selected, address: e.target.value })
+                        }
+                        className="input input-bordered w-full col-span-2"
+                    />
+
+                    <input
+                        type="text"
+                        placeholder="Mobile"
+                        value={selected.mobile}
+                        onChange={(e) =>
+                            setSelected({ ...selected, mobile: e.target.value })
+                        }
+                        className="input input-bordered w-full col-span-2"
+                    />
+                </div>
+
+                <button type="submit" className="btn btn-primary w-full mt-4">
+                    Submit
+                </button>
+            </form>
         </div>
-      )}
-    </div>
-  );
+    );
 }

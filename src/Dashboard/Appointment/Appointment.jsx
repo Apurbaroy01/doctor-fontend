@@ -4,22 +4,54 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import AOS from "aos";
 import "aos/dist/aos.css";
 import { FaFilePrescription, FaSearch } from "react-icons/fa";
-import { RiPagesLine } from "react-icons/ri";
 import useAxios from "../../Hook/useAxios";
 import { Link } from "react-router-dom";
 
 const AppointmentForm = () => {
-    const { register, handleSubmit, reset } = useForm();
+    const { register, handleSubmit, reset, setValue } = useForm();
     const [showModal, setShowModal] = useState(false);
     const [searchTerm, setSearchTerm] = useState("");
     const [selectedDate, setSelectedDate] = useState("");
     const [selectedTime, setSelectedTime] = useState("");
-  
+    const [query, setQuery] = useState("");
+    const [results, setResults] = useState([]);
+    const [loading, setLoading] = useState(false);
     const axiosInstance = useAxios();
     const queryClient = useQueryClient();
 
- 
-    // ✅ Generate 12-hour time slots (10 min interval)
+    // ✅ Patient search (by mobile number)
+    const handleSearch = async (value) => {
+        setQuery(value);
+
+        if (value.trim().length < 2) {
+            setResults([]);
+            return;
+        }
+
+        setLoading(true);
+        try {
+            const res = await axiosInstance.get(`/patients/search?q=${value}`);
+            setResults(res.data);
+        } catch (err) {
+            console.error(err);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    // ✅ Auto-fill form after patient select
+    const handleSelect = (patient) => {
+        setResults([]);
+        setQuery(patient.mobile || "");
+        // react-hook-form এর ফিল্ডগুলো অটো ফিল করা
+        setValue("mobile", patient.mobile || "");
+        setValue("name", patient.name || "");
+        setValue("age", patient.age || "");
+        setValue("address", patient.address || "");
+        setValue("payment", patient.payment || "");
+    };
+
+    // ✅ Generate time slots
     const timeSlots = [];
     for (let hour = 0; hour < 24; hour++) {
         for (let minute = 0; minute < 60; minute += 10) {
@@ -39,7 +71,7 @@ const AppointmentForm = () => {
         },
     });
 
-    // ✅ Fetch booked times for selected date
+    // ✅ Fetch booked times
     const { data: bookedAppointments = [] } = useQuery({
         queryKey: ["bookedTimes", selectedDate],
         queryFn: async () => {
@@ -52,7 +84,7 @@ const AppointmentForm = () => {
 
     const bookedTimes = bookedAppointments.map((apt) => apt.time);
 
-    // ✅ Add new appointment
+    // ✅ Add appointment
     const addAppointment = useMutation({
         mutationFn: async (newAppointment) =>
             await axiosInstance.post(`/appointments`, newAppointment),
@@ -67,15 +99,6 @@ const AppointmentForm = () => {
         },
     });
 
-    // // ✅ Delete appointment
-    // const deleteAppointment = useMutation({
-    //     mutationFn: async (id) =>
-    //         await axiosInstance.delete(`/appointments/${id}`),
-    //     onSuccess: () => {
-    //         queryClient.invalidateQueries(["appointments"]);
-    //     },
-    // });
-
     // ✅ Update appointment status
     const updateStatus = useMutation({
         mutationFn: async ({ id, status }) =>
@@ -85,7 +108,6 @@ const AppointmentForm = () => {
             refetch();
         },
     });
-
 
     useEffect(() => {
         AOS.init({ duration: 800, once: true });
@@ -98,23 +120,21 @@ const AppointmentForm = () => {
             return;
         }
 
-        // const randomId = "APT-" + Math.random().toString(36).substr(2, 8).toUpperCase();
-
         const newAppointment = {
             ...data,
             date: selectedDate,
             time: selectedTime,
-            // trackingId: randomId,
         };
 
         addAppointment.mutate(newAppointment);
     };
 
-    // ✅ Search filter
+    // ✅ Search filter (for main table)
     const filteredAppointments = appointments.filter(
         (apt) =>
-            apt.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            apt.trackingId?.toLowerCase().includes(searchTerm.toLowerCase())
+            apt.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            apt.trackingId?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            apt.mobile?.toLowerCase().includes(searchTerm.toLowerCase())
     );
 
     if (isLoading)
@@ -139,14 +159,19 @@ const AppointmentForm = () => {
                         <FaSearch className="absolute left-3 top-3 text-gray-500" />
                         <input
                             type="text"
-                            placeholder="Search by Name or Tracking ID..."
+                            placeholder="Search by Name, Tracking ID or Mobile..."
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
                             className="input input-bordered w-full pl-10"
                         />
                     </div>
                     <button
-                        onClick={() => setShowModal(true)}
+                        onClick={() => {
+                            setShowModal(true);
+                            reset();
+                            setQuery("");
+                            setResults([]);
+                        }}
                         className="btn btn-primary rounded-full px-6"
                     >
                         + Book New Appointment
@@ -162,13 +187,12 @@ const AppointmentForm = () => {
                                     <th>#</th>
                                     <th>Name</th>
                                     <th>Age</th>
-                                    {/* <th>Date</th> */}
                                     <th>Time</th>
                                     <th>Address</th>
                                     <th>Mobile</th>
                                     <th>Payment</th>
                                     <th>Tracking ID</th>
-                                    <th></th>
+                                    <th>Status</th>
                                     <th>Action</th>
                                 </tr>
                             </thead>
@@ -176,34 +200,35 @@ const AppointmentForm = () => {
                                 {filteredAppointments.map((apt, index) => (
                                     <tr key={apt._id}>
                                         <td>{index + 1}</td>
-                                        <td> {apt.name} </td>
+                                        <td>{apt.name}</td>
                                         <td>{apt.age}</td>
-                                        {/* <td>{apt.date}</td> */}
                                         <td>{apt.time}</td>
                                         <td>{apt.address}</td>
                                         <td>{apt.mobile}</td>
                                         <td>{apt.payment}</td>
-                                        <td className=" text-blue-700">
-                                            {apt.trackingId}
-                                        </td>
-
+                                        <td className="text-blue-700">{apt.trackingId}</td>
                                         <td>
                                             <select
                                                 defaultValue={apt.status || "Pending"}
                                                 onChange={(e) =>
-                                                    updateStatus.mutate({ id: apt._id, status: e.target.value })
+                                                    updateStatus.mutate({
+                                                        id: apt._id,
+                                                        status: e.target.value,
+                                                    })
                                                 }
-                                                className={apt.status =="Completed"? "text-teal-500": ""}
+                                                className={
+                                                    apt.status === "Completed"
+                                                        ? "text-teal-500"
+                                                        : "text-gray-700"
+                                                }
                                             >
                                                 <option>Pending</option>
                                                 <option>Completed</option>
                                             </select>
                                         </td>
-
-
                                         <td>
-                                            <Link to={`${apt._id}`}
-                                                
+                                            <Link
+                                                to={`${apt._id}`}
                                                 className="btn btn-sm btn-error text-xl text-white bg-red-400"
                                             >
                                                 <FaFilePrescription />
@@ -232,6 +257,33 @@ const AppointmentForm = () => {
                             onSubmit={handleSubmit(onSubmit)}
                             className="grid grid-cols-1 md:grid-cols-2 gap-4"
                         >
+                            {/* Mobile search field */}
+                            <input
+                                {...register("mobile", { required: true })}
+                                placeholder="Enter Mobile Number"
+                                className="input input-bordered col-span-1"
+                                value={query}
+                                onChange={(e) => handleSearch(e.target.value)}
+                            />
+
+                            {/* Search Results */}
+                            <div className="col-span-2">
+                                {loading && (
+                                    <p className="text-sm text-gray-500 mt-1">Searching...</p>
+                                )}
+                                {results.length > 0 && (
+                                    <ul className="menu bg-base-200 mt-2 rounded-box shadow-md">
+                                        {results.map((p) => (
+                                            <li key={p._id} onClick={() => handleSelect(p)}>
+                                                <a>
+                                                    {p.patientId || "N/A"} - {p.name} ({p.mobile})
+                                                </a>
+                                            </li>
+                                        ))}
+                                    </ul>
+                                )}
+                            </div>
+
                             <input
                                 {...register("name", { required: true })}
                                 placeholder="Full Name"
@@ -253,7 +305,7 @@ const AppointmentForm = () => {
                                 required
                             />
 
-                            {/* ✅ Time Slot Selector */}
+                            {/* Time Slots */}
                             {selectedDate && (
                                 <div className="col-span-2">
                                     <h4 className="font-semibold mt-1 mb-2 text-gray-700">
@@ -269,10 +321,10 @@ const AppointmentForm = () => {
                                                     disabled={isBooked}
                                                     onClick={() => !isBooked && setSelectedTime(time)}
                                                     className={`btn btn-sm rounded-md ${isBooked
-                                                        ? "btn-disabled bg-gray-300 text-gray-500 cursor-not-allowed"
-                                                        : selectedTime === time
-                                                            ? "btn-primary text-white"
-                                                            : "btn-outline"
+                                                            ? "btn-disabled bg-gray-300 text-gray-500 cursor-not-allowed"
+                                                            : selectedTime === time
+                                                                ? "btn-primary text-white"
+                                                                : "btn-outline"
                                                         }`}
                                                 >
                                                     {time}
@@ -288,11 +340,7 @@ const AppointmentForm = () => {
                                 placeholder="Address"
                                 className="input input-bordered col-span-2"
                             />
-                            <input
-                                {...register("mobile", { required: true })}
-                                placeholder="Mobile"
-                                className="input input-bordered col-span-1"
-                            />
+
                             <input
                                 {...register("payment", { required: true })}
                                 placeholder="Payment BDT"
