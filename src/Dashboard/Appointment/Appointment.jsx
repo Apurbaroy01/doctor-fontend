@@ -14,9 +14,11 @@ const AppointmentForm = () => {
     const [searchTerm, setSearchTerm] = useState("");
     const [selectedDate, setSelectedDate] = useState("");
     const [selectedTime, setSelectedTime] = useState("");
+  
     const axiosInstance = useAxios();
     const queryClient = useQueryClient();
 
+ 
     // ✅ Generate 12-hour time slots (10 min interval)
     const timeSlots = [];
     for (let hour = 0; hour < 24; hour++) {
@@ -293,7 +295,7 @@ const AppointmentForm = () => {
                             />
                             <input
                                 {...register("payment", { required: true })}
-                                placeholder="Payment Method"
+                                placeholder="Payment BDT"
                                 className="input input-bordered col-span-1"
                             />
 

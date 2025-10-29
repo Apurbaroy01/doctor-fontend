@@ -3,23 +3,28 @@ import { useEffect, useState } from "react";
 import useAxios from "../../Hook/useAxios";
 import { FaUserMd, FaCalendarAlt, FaFilePrescription } from "react-icons/fa";
 import { RiTimeLine } from "react-icons/ri";
-import { QueryClient, useMutation, useQuery } from "@tanstack/react-query";
+import {
+  useQuery,
+  useMutation,
+  useQueryClient,
+} from "@tanstack/react-query";
 
 const AppointmentDetails = () => {
   const { id } = useParams();
   const axiosSecure = useAxios();
+  const queryClient = useQueryClient();
+
   const [appointment, setAppointment] = useState(null);
   const [loading, setLoading] = useState(true);
- 
 
-  // Fetch single appointment by ID
+  // 🔹 Fetch single appointment by ID
   useEffect(() => {
     const fetchAppointment = async () => {
       try {
         const res = await axiosSecure.get(`/appointments/${id}`);
         setAppointment(res.data);
       } catch (err) {
-        console.error(err);
+        console.error("Error fetching appointment:", err);
       } finally {
         setLoading(false);
       }
@@ -27,29 +32,33 @@ const AppointmentDetails = () => {
     fetchAppointment();
   }, [id, axiosSecure]);
 
-  // Fetch all appointments under the same trackingId
-  const { data: appointments = [], isLoading: historyLoading, refetch } = useQuery({
+
+  const {data: appointments = [], isLoading: historyLoading,} = useQuery({
     queryKey: ["appointments", appointment?.trackingId],
     queryFn: async () => {
       if (!appointment?.trackingId) return [];
-      const res = await axiosSecure.get(`/patient?trackingId=${appointment.trackingId}`);
+      const res = await axiosSecure.get(
+        `/patient?trackingId=${appointment.trackingId}`
+      );
       return res.data;
     },
     enabled: !!appointment?.trackingId,
   });
 
-  // ✅ Update appointment status
+
   const updateStatus = useMutation({
     mutationFn: async ({ id, status }) =>
       await axiosSecure.patch(`/appointments/${id}`, { status }),
     onSuccess: () => {
-      QueryClient.invalidateQueries(["appointments"]);
-      refetch();
+      queryClient.invalidateQueries(["appointments", appointment?.trackingId]);
     },
   });
 
-  if (loading || historyLoading) return <p className="text-center py-10">Loading...</p>;
-  if (!appointment) return <p className="text-center text-error">No appointment found.</p>;
+  if (loading || historyLoading)
+    return <p className="text-center py-10">Loading...</p>;
+
+  if (!appointment)
+    return <p className="text-center text-error">No appointment found.</p>;
 
   return (
     <div className="p-6 max-w-5xl mx-auto">
@@ -57,25 +66,32 @@ const AppointmentDetails = () => {
         Appointment Details
       </h2>
 
-      {/* Patient Info */}
+      {/* 🔹 Patient Info */}
       <div className="card bg-base-100 shadow-xl border border-base-300 p-6 mb-10">
         <div className="flex items-center justify-between mb-5">
           <h3 className="text-xl font-bold flex items-center gap-2 text-primary">
             <FaUserMd className="text-secondary text-lg" /> Patient Information
           </h3>
 
-          {/* Status Dropdown */}
-          <div className="flex items-center gap-2 ">
+          {/* 🔹 Status Dropdown */}
+          <div className="flex items-center gap-2">
             <label className="font-semibold text-sm text-gray-600">Status:</label>
             <select
               defaultValue={appointment.status || "Pending"}
               onChange={(e) =>
-                updateStatus.mutate({ id: appointment._id, status: e.target.value })
+                updateStatus.mutate({
+                  id: appointment._id,
+                  status: e.target.value,
+                })
               }
               className="select select-sm select-bordered font-medium text-gray-700"
             >
-              <option value="Pending" className="text-warning">Pending</option>
-              <option value="Completed" className="text-success">Completed</option>
+              <option value="Pending" className="text-warning">
+                Pending
+              </option>
+              <option value="Completed" className="text-success">
+                Completed
+              </option>
             </select>
           </div>
         </div>
@@ -103,7 +119,9 @@ const AppointmentDetails = () => {
 
           <div className="p-3 rounded-lg bg-base-200">
             <p className="text-sm text-gray-500">Payment:</p>
-            <p className="font-semibold text-primary">{appointment.payment} BDT</p>
+            <p className="font-semibold text-primary">
+              {appointment.payment} BDT
+            </p>
           </div>
 
           <div className="p-3 rounded-lg bg-base-200">
@@ -113,9 +131,7 @@ const AppointmentDetails = () => {
         </div>
       </div>
 
-
-
-      {/* Tabs */}
+      {/* 🔹 Tabs Section */}
       <div role="tablist" className="tabs tabs-lifted">
         {/* Tab 1: Prescription */}
         <input
@@ -126,16 +142,27 @@ const AppointmentDetails = () => {
           aria-label="Prescription"
           defaultChecked
         />
-        <div role="tabpanel" className="tab-content bg-base-100 border-base-300 rounded-box p-6">
+        <div
+          role="tabpanel"
+          className="tab-content bg-base-100 border-base-300 rounded-box p-6"
+        >
           <h3 className="text-xl font-semibold mb-4 flex items-center gap-2">
             <FaFilePrescription /> Prescription
           </h3>
 
           {appointment.prescription ? (
             <div className="space-y-3">
-              <p><strong>Medicine:</strong> {appointment.prescription.medicine}</p>
-              <p><strong>Dosage:</strong> {appointment.prescription.dosage}</p>
-              <p><strong>Instructions:</strong> {appointment.prescription.instructions}</p>
+              <p>
+                <strong>Medicine:</strong>{" "}
+                {appointment.prescription.medicine}
+              </p>
+              <p>
+                <strong>Dosage:</strong> {appointment.prescription.dosage}
+              </p>
+              <p>
+                <strong>Instructions:</strong>{" "}
+                {appointment.prescription.instructions}
+              </p>
             </div>
           ) : (
             <div className="text-center py-4 text-gray-500">
@@ -152,7 +179,10 @@ const AppointmentDetails = () => {
           className="tab"
           aria-label="Appointment History"
         />
-        <div role="tabpanel" className="tab-content bg-base-100 border-base-300 rounded-box p-6">
+        <div
+          role="tabpanel"
+          className="tab-content bg-base-100 border-base-300 rounded-box p-6"
+        >
           <h3 className="text-xl font-semibold mb-4 flex items-center gap-2">
             <FaCalendarAlt /> Appointment History
           </h3>
@@ -169,9 +199,17 @@ const AppointmentDetails = () => {
                       {item.date} - {item.time}
                     </time>
                     <div className="text-sm text-gray-700 mt-1">
-                      <p><strong>Payment:</strong> {item.payment} BDT</p>
-                      <p><strong>Status:</strong>{" "}
-                        <span className={`badge ${item.status === "Completed" ? "badge-success" : "badge-warning"}`}>
+                      <p>
+                        <strong>Payment:</strong> {item.payment} BDT
+                      </p>
+                      <p>
+                        <strong>Status:</strong>{" "}
+                        <span
+                          className={`badge ${item.status === "Completed"
+                              ? "badge-success"
+                              : "badge-warning"
+                            }`}
+                        >
                           {item.status || "Pending"}
                         </span>
                       </p>
@@ -182,7 +220,9 @@ const AppointmentDetails = () => {
               ))}
             </ul>
           ) : (
-            <p className="text-gray-500">No previous appointment history found.</p>
+            <p className="text-gray-500">
+              No previous appointment history found.
+            </p>
           )}
         </div>
 
@@ -194,7 +234,10 @@ const AppointmentDetails = () => {
           className="tab"
           aria-label="Timeline"
         />
-        <div role="tabpanel" className="tab-content bg-base-100 border-base-300 rounded-box p-6">
+        <div
+          role="tabpanel"
+          className="tab-content bg-base-100 border-base-300 rounded-box p-6"
+        >
           <h3 className="text-xl font-semibold mb-4 flex items-center gap-2">
             <RiTimeLine /> Timeline
           </h3>
@@ -207,12 +250,19 @@ const AppointmentDetails = () => {
                     <RiTimeLine className="text-secondary text-lg" />
                   </div>
                   <div className="timeline-end mb-10">
-                    <time className="font-semibold text-primary">{step.date}</time>
+                    <time className="font-semibold text-primary">
+                      {step.date}
+                    </time>
                     <div className="text-sm text-gray-700 mt-1">
                       Appointment booked for <b>{step.time}</b> <br />
                       Payment: <b>{step.payment} BDT</b> <br />
                       Status:{" "}
-                      <span className={`badge ${step.status === "Completed" ? "badge-success" : "badge-warning"}`}>
+                      <span
+                        className={`badge ${step.status === "Completed"
+                            ? "badge-success"
+                            : "badge-warning"
+                          }`}
+                      >
                         {step.status || "Pending"}
                       </span>
                     </div>

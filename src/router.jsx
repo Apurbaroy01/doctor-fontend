@@ -9,6 +9,7 @@ import AppointmentForm from "./Dashboard/Appointment/Appointment";
 import PatientList from "./Dashboard/PatientList/PatientList";
 import ProfileSettings from "./Dashboard/ProfileSettings/ProfileSettings";
 import AppointmentDetails from "./Dashboard/AppointmentDetails/AppointmentDetails";
+import PatientSearchForm from "./Dashboard/Demo/PatientSearchForm";
 
 
 const router = createBrowserRouter([
@@ -48,6 +49,11 @@ const router = createBrowserRouter([
             {
                 path:"appointment/:id",
                 Component: AppointmentDetails,
+                
+            },
+            {
+                path:"search",
+                Component: PatientSearchForm
                 
             },
         ]
