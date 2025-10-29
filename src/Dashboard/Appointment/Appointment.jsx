@@ -249,67 +249,101 @@ const AppointmentForm = () => {
             {/* ✅ Modal */}
             {showModal && (
                 <dialog open className="modal">
-                    <div className="modal-box max-w-2xl">
-                        <h3 className="font-bold text-xl text-blue-600 mb-4">
-                            Book a Doctor Appointment
-                        </h3>
-                        <form
-                            onSubmit={handleSubmit(onSubmit)}
-                            className="grid grid-cols-1 md:grid-cols-2 gap-4"
-                        >
-                            {/* Mobile search field */}
-                            <input
-                                {...register("mobile", { required: true })}
-                                placeholder="Enter Mobile Number"
-                                className="input input-bordered col-span-1"
-                                value={query}
-                                onChange={(e) => handleSearch(e.target.value)}
-                            />
+                    <div className="modal-box max-w-3xl bg-gradient-to-br from-blue-50 to-white border border-blue-200 shadow-xl rounded-2xl">
+                        <div className="flex justify-between items-center mb-4 border-b pb-2">
+                            <h3 className="text-2xl font-semibold text-blue-700 flex items-center gap-2">
+                                🩺 Book a Doctor Appointment
+                            </h3>
+                            <button
+                                onClick={() => setShowModal(false)}
+                                className="btn btn-sm btn-circle btn-outline hover:bg-blue-100"
+                            >
+                                ✕
+                            </button>
+                        </div>
 
-                            {/* Search Results */}
-                            <div className="col-span-2">
+                        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+                            {/* 🔍 Mobile Search Field */}
+                            <div className="relative">
+                                <label className="block text-sm font-medium text-gray-600 mb-1">
+                                    Search by Mobile Number
+                                </label>
+                                <input
+                                    {...register("mobile", { required: true })}
+                                    placeholder="Enter Mobile Number..."
+                                    value={query}
+                                    onChange={(e) => handleSearch(e.target.value)}
+                                    className="input input-bordered w-full pl-4 pr-10 focus:outline-none focus:ring-2 focus:ring-blue-400 transition-all duration-200"
+                                />
                                 {loading && (
-                                    <p className="text-sm text-gray-500 mt-1">Searching...</p>
+                                    <span className="absolute right-3 top-3 text-blue-500 text-sm">
+                                        Searching...
+                                    </span>
                                 )}
+
+                                {/* Search Results */}
                                 {results.length > 0 && (
-                                    <ul className="menu bg-base-200 mt-2 rounded-box shadow-md">
+                                    <ul className="absolute bg-white border border-gray-200 shadow-md rounded-md mt-2 w-full z-10 max-h-56 overflow-y-auto">
                                         {results.map((p) => (
-                                            <li key={p._id} onClick={() => handleSelect(p)}>
-                                                <a>
-                                                    {p.patientId || "N/A"} - {p.name} ({p.mobile})
-                                                </a>
+                                            <li
+                                                key={p._id}
+                                                onClick={() => handleSelect(p)}
+                                                className="px-4 py-2 hover:bg-blue-100 cursor-pointer text-gray-700"
+                                            >
+                                                <b>{p.name}</b> — {p.mobile}
+                                                <span className="text-sm text-gray-500 ml-2">
+                                                    {p.patientId || "N/A"}
+                                                </span>
                                             </li>
                                         ))}
                                     </ul>
                                 )}
                             </div>
 
-                            <input
-                                {...register("name", { required: true })}
-                                placeholder="Full Name"
-                                className="input input-bordered col-span-1"
-                            />
-                            <input
-                                {...register("age", { required: true })}
-                                type="number"
-                                placeholder="Age"
-                                className="input input-bordered col-span-1"
-                            />
+                            {/* 🧍 Basic Info */}
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-600 mb-1">
+                                        Full Name
+                                    </label>
+                                    <input
+                                        {...register("name", { required: true })}
+                                        placeholder="Patient Name"
+                                        className="input input-bordered w-full focus:ring-2 focus:ring-blue-400"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-600 mb-1">
+                                        Age
+                                    </label>
+                                    <input
+                                        {...register("age", { required: true })}
+                                        type="number"
+                                        placeholder="Age"
+                                        className="input input-bordered w-full focus:ring-2 focus:ring-blue-400"
+                                    />
+                                </div>
+                            </div>
 
-                            {/* Date Picker */}
-                            <input
-                                type="date"
-                                value={selectedDate}
-                                onChange={(e) => setSelectedDate(e.target.value)}
-                                className="input input-bordered col-span-2"
-                                required
-                            />
+                            {/* 📅 Date Picker */}
+                            <div>
+                                <label className="block text-sm font-medium text-gray-600 mb-1">
+                                    Appointment Date
+                                </label>
+                                <input
+                                    type="date"
+                                    value={selectedDate}
+                                    onChange={(e) => setSelectedDate(e.target.value)}
+                                    className="input input-bordered w-full focus:ring-2 focus:ring-blue-400"
+                                    required
+                                />
+                            </div>
 
-                            {/* Time Slots */}
+                            {/* ⏰ Time Slots */}
                             {selectedDate && (
-                                <div className="col-span-2">
-                                    <h4 className="font-semibold mt-1 mb-2 text-gray-700">
-                                        Select Time Slot:
+                                <div>
+                                    <h4 className="text-sm font-medium text-gray-600 mb-2">
+                                        Select Time Slot
                                     </h4>
                                     <div className="grid grid-cols-3 md:grid-cols-4 gap-2 max-h-40 overflow-y-auto">
                                         {timeSlots.map((time) => {
@@ -320,11 +354,11 @@ const AppointmentForm = () => {
                                                     type="button"
                                                     disabled={isBooked}
                                                     onClick={() => !isBooked && setSelectedTime(time)}
-                                                    className={`btn btn-sm rounded-md ${isBooked
-                                                            ? "btn-disabled bg-gray-300 text-gray-500 cursor-not-allowed"
+                                                    className={`btn btn-sm rounded-lg ${isBooked
+                                                            ? "btn-disabled bg-gray-100 text-gray-400 cursor-not-allowed"
                                                             : selectedTime === time
-                                                                ? "btn-primary text-white"
-                                                                : "btn-outline"
+                                                                ? "bg-blue-600 text-white hover:bg-blue-700"
+                                                                : "btn-outline hover:bg-blue-100"
                                                         }`}
                                                 >
                                                     {time}
@@ -335,28 +369,45 @@ const AppointmentForm = () => {
                                 </div>
                             )}
 
-                            <input
-                                {...register("address", { required: true })}
-                                placeholder="Address"
-                                className="input input-bordered col-span-2"
-                            />
+                            {/* 🏠 Address + 💰 Payment */}
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-600 mb-1">
+                                        Address
+                                    </label>
+                                    <input
+                                        {...register("address", { required: true })}
+                                        placeholder="Patient Address"
+                                        className="input input-bordered w-full focus:ring-2 focus:ring-blue-400"
+                                    />
+                                </div>
 
-                            <input
-                                {...register("payment", { required: true })}
-                                placeholder="Payment BDT"
-                                className="input input-bordered col-span-1"
-                            />
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-600 mb-1">
+                                        Payment (BDT)
+                                    </label>
+                                    <input
+                                        {...register("payment", { required: true })}
+                                        placeholder="Payment Amount"
+                                        className="input input-bordered w-full focus:ring-2 focus:ring-blue-400"
+                                    />
+                                </div>
+                            </div>
 
-                            <div className="col-span-2 flex justify-end gap-3 mt-4">
+                            {/* ⚡ Buttons */}
+                            <div className="flex justify-end gap-3 mt-6 border-t pt-3">
                                 <button
                                     type="button"
                                     onClick={() => setShowModal(false)}
-                                    className="btn btn-outline"
+                                    className="btn btn-outline border-gray-400 hover:bg-gray-100"
                                 >
                                     Cancel
                                 </button>
-                                <button type="submit" className="btn btn-primary">
-                                    Confirm
+                                <button
+                                    type="submit"
+                                    className="btn bg-blue-600 hover:bg-blue-700 text-white font-semibold shadow-md"
+                                >
+                                    Confirm Appointment
                                 </button>
                             </div>
                         </form>
@@ -366,6 +417,7 @@ const AppointmentForm = () => {
                     </form>
                 </dialog>
             )}
+
         </section>
     );
 };
