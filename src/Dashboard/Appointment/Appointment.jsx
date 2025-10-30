@@ -228,7 +228,7 @@ const AppointmentForm = () => {
                                         </td>
                                         <td>
                                             <Link
-                                                to={`${apt._id}`}
+                                                to={`${apt._id}/${apt.name}`}
                                                 className="btn btn-sm btn-error text-xl text-white bg-red-400"
                                             >
                                                 <FaFilePrescription />

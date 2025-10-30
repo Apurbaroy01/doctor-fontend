@@ -8,6 +8,7 @@ import {
   useMutation,
   useQueryClient,
 } from "@tanstack/react-query";
+import PrescriptionForm from "./PrescriptionForm";
 
 const AppointmentDetails = () => {
   const { id } = useParams();
@@ -33,7 +34,7 @@ const AppointmentDetails = () => {
   }, [id, axiosSecure]);
 
 
-  const {data: appointments = [], isLoading: historyLoading,} = useQuery({
+  const { data: appointments = [], isLoading: historyLoading, } = useQuery({
     queryKey: ["appointments", appointment?.trackingId],
     queryFn: async () => {
       if (!appointment?.trackingId) return [];
@@ -133,6 +134,7 @@ const AppointmentDetails = () => {
 
       {/* 🔹 Tabs Section */}
       <div role="tablist" className="tabs tabs-lifted">
+        
         {/* Tab 1: Prescription */}
         <input
           type="radio"
@@ -146,30 +148,9 @@ const AppointmentDetails = () => {
           role="tabpanel"
           className="tab-content bg-base-100 border-base-300 rounded-box p-6"
         >
-          <h3 className="text-xl font-semibold mb-4 flex items-center gap-2">
-            <FaFilePrescription /> Prescription
-          </h3>
-
-          {appointment.prescription ? (
-            <div className="space-y-3">
-              <p>
-                <strong>Medicine:</strong>{" "}
-                {appointment.prescription.medicine}
-              </p>
-              <p>
-                <strong>Dosage:</strong> {appointment.prescription.dosage}
-              </p>
-              <p>
-                <strong>Instructions:</strong>{" "}
-                {appointment.prescription.instructions}
-              </p>
-            </div>
-          ) : (
-            <div className="text-center py-4 text-gray-500">
-              <p>No prescription available yet.</p>
-            </div>
-          )}
+          <PrescriptionForm appointment={appointment} />
         </div>
+
 
         {/* Tab 2: Appointment History */}
         <input
@@ -206,8 +187,8 @@ const AppointmentDetails = () => {
                         <strong>Status:</strong>{" "}
                         <span
                           className={`badge ${item.status === "Completed"
-                              ? "badge-success"
-                              : "badge-warning"
+                            ? "badge-success"
+                            : "badge-warning"
                             }`}
                         >
                           {item.status || "Pending"}
@@ -259,8 +240,8 @@ const AppointmentDetails = () => {
                       Status:{" "}
                       <span
                         className={`badge ${step.status === "Completed"
-                            ? "badge-success"
-                            : "badge-warning"
+                          ? "badge-success"
+                          : "badge-warning"
                           }`}
                       >
                         {step.status || "Pending"}

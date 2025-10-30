@@ -47,7 +47,12 @@ const router = createBrowserRouter([
                 
             },
             {
-                path:"appointment/:id",
+                path:"appointment/:id/:name",
+                Component: AppointmentDetails,
+                
+            },
+            {
+                path:"patientlist/:id/:name",
                 Component: AppointmentDetails,
                 
             },

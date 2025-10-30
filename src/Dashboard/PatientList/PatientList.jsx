@@ -15,6 +15,7 @@ import useAxios from "../../Hook/useAxios";
 import { isSameDay, parseISO, format } from "date-fns";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import { Link } from "react-router-dom";
 
 const PatientList = () => {
     const [search, setSearch] = useState("");
@@ -152,9 +153,11 @@ const PatientList = () => {
                                             <td>{p.address}</td>
                                             <td>{format(parseISO(p.date), "MMMM dd, yyyy")}</td>
                                             <td className="flex gap-2">
-                                                <button className="btn btn-sm btn-outline btn-primary flex items-center gap-1">
+                                                <Link to={`${p._id}/${p.name}`}
+                                                    className="btn btn-sm btn-outline btn-primary flex items-center gap-1">
                                                     <FaEye /> View
-                                                </button>
+                                                </Link
+                                                >
                                                 <button
                                                     onClick={() => handleDelete(p._id)}
                                                     disabled={deleteMutation.isLoading}
@@ -177,8 +180,8 @@ const PatientList = () => {
                                         key={i}
                                         onClick={() => handlePageChange(i + 1)}
                                         className={`btn btn-sm ${currentPage === i + 1
-                                                ? "bg-blue-600 text-white"
-                                                : "btn-outline btn-primary"
+                                            ? "bg-blue-600 text-white"
+                                            : "btn-outline btn-primary"
                                             }`}
                                     >
                                         {i + 1}
