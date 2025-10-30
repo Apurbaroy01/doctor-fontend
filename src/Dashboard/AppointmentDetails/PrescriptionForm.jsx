@@ -7,6 +7,8 @@ import {
 } from "react-icons/fa";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import useAxios from "../../Hook/useAxios";
+import PrescriptionPrint from "./PrescriptionPrint";
+
 
 const PrescriptionForm = ({ appointment }) => {
     const axiosSecure = useAxios();
@@ -21,7 +23,7 @@ const PrescriptionForm = ({ appointment }) => {
             appointment?.prescription?.generalInstructions || "",
     });
 
-    // 🔹 Mutation for Saving Prescription
+    // 🔹 Save Prescription Mutation
     const updatePrescription = useMutation({
         mutationFn: async (data) =>
             await axiosSecure.patch(`/appointments/${appointment._id}`, {
@@ -29,7 +31,7 @@ const PrescriptionForm = ({ appointment }) => {
             }),
         onSuccess: () => {
             queryClient.invalidateQueries(["appointments", appointment.trackingId]);
-            handlePrint(); // 🖨️ Trigger print right after saving
+            PrescriptionPrint({ appointment, formData }); // 🖨️ Print after save
         },
     });
 
@@ -75,88 +77,9 @@ const PrescriptionForm = ({ appointment }) => {
         }));
     };
 
-    // 🔹 Print Prescription
+    // 🔹 Print Preview
     const handlePrint = () => {
-        const printWindow = window.open("", "_blank");
-        const today = new Date().toLocaleDateString();
-
-        const htmlContent = `
-      <html>
-        <head>
-          <title>Prescription - ${appointment?.name}</title>
-          <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
-          <style>
-            @media print {
-              @page { margin: 20mm; }
-            }
-          </style>
-        </head>
-        <body class="p-10 text-gray-800">
-          <div class="border-b-4 border-blue-500 pb-4 mb-6">
-            <h1 class="text-3xl font-bold text-blue-600">Medical Prescription</h1>
-            <p class="text-sm text-gray-500">Date: ${today}</p>
-          </div>
-
-          <div class="mb-6">
-            <h2 class="text-xl font-semibold mb-2">Patient Information</h2>
-            <p><strong>Name:</strong> ${appointment?.name}</p>
-            <p><strong>Phone:</strong> ${appointment?.mobile}</p>
-            <p><strong>Tracking ID:</strong> ${appointment?.trackingId}</p>
-          </div>
-
-          <div class="mb-6">
-            <h2 class="text-xl font-semibold mb-3">Medicines</h2>
-            <table class="w-full border border-gray-300">
-              <thead class="bg-blue-100">
-                <tr>
-                  <th class="border p-2 text-left">Name</th>
-                  <th class="border p-2 text-left">Dosage</th>
-                  <th class="border p-2 text-left">Instructions</th>
-                </tr>
-              </thead>
-              <tbody>
-                ${formData.medicines
-                .map(
-                    (m) => `
-                    <tr>
-                      <td class="border p-2">${m.name}</td>
-                      <td class="border p-2">${m.dosage}</td>
-                      <td class="border p-2">${m.instructions}</td>
-                    </tr>
-                  `
-                )
-                .join("")}
-              </tbody>
-            </table>
-          </div>
-
-          <div class="mb-6">
-            <h2 class="text-xl font-semibold mb-3">Recommended Tests</h2>
-            <ul class="list-disc list-inside">
-              ${formData.tests
-                .filter((t) => t.trim() !== "")
-                .map((t) => `<li>${t}</li>`)
-                .join("") || "<p>No tests recommended.</p>"}
-            </ul>
-          </div>
-
-          <div class="mb-8">
-            <h2 class="text-xl font-semibold mb-3">General Instructions</h2>
-            <p>${formData.generalInstructions || "No specific instructions."}</p>
-          </div>
-
-          <div class="text-right mt-10">
-            <p class="font-semibold text-gray-600">Dr. ____________________</p>
-            <p class="text-sm text-gray-500">Signature</p>
-          </div>
-        </body>
-      </html>
-    `;
-
-        printWindow.document.write(htmlContent);
-        printWindow.document.close();
-        printWindow.focus();
-        printWindow.print();
+        PrescriptionPrint({ appointment, formData });
     };
 
     // 🔹 Submit
@@ -172,7 +95,7 @@ const PrescriptionForm = ({ appointment }) => {
             </h3>
 
             <form onSubmit={handleSubmit} className="space-y-6">
-                {/* 🔹 Medicines */}
+                {/* 🔹 Medicines Section */}
                 <div>
                     <div className="flex items-center justify-between mb-3">
                         <h4 className="font-bold text-lg text-primary">Medicines</h4>
@@ -242,7 +165,7 @@ const PrescriptionForm = ({ appointment }) => {
                     ))}
                 </div>
 
-                {/* 🔹 Tests */}
+                {/* 🔹 Tests Section */}
                 <div>
                     <div className="flex items-center justify-between mb-3">
                         <h4 className="font-bold text-lg text-primary">Tests</h4>
@@ -279,7 +202,9 @@ const PrescriptionForm = ({ appointment }) => {
 
                 {/* 🔹 General Instructions */}
                 <div>
-                    <label className="label-text font-semibold">General Instructions</label>
+                    <label className="label-text font-semibold">
+                        General Instructions
+                    </label>
                     <textarea
                         name="generalInstructions"
                         value={formData.generalInstructions}
@@ -294,7 +219,7 @@ const PrescriptionForm = ({ appointment }) => {
                     />
                 </div>
 
-                {/* 🔹 Submit */}
+                {/* 🔹 Buttons */}
                 <div className="flex justify-between gap-3">
                     <button
                         type="submit"
