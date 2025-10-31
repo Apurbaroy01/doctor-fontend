@@ -66,6 +66,7 @@ const Login = () => {
                                 {...register("email", {
                                     required: "Email is required",
                                 })}
+                                defaultValue="triptyir@gmail.com"
                                 type="email"
                                 placeholder="Enter your email"
                                 className={`w-full px-4 py-3 rounded-lg text-black bg-white focus:outline-none focus:ring-2 transition-all duration-300 ${errors.email
@@ -91,6 +92,7 @@ const Login = () => {
                                         message: "Password must be at least 6 characters",
                                     },
                                 })}
+                                defaultValue="triptyir@gmail.com"
                                 type={icon ? "text" : "password"}
                                 placeholder="Enter your password"
                                 className={`w-full px-4 py-3 rounded-lg text-black bg-white focus:outline-none focus:ring-2 transition-all duration-300 ${errors.password

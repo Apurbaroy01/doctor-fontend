@@ -33,9 +33,10 @@ const PrescriptionPrint = ({ appointment, formData, doctor }) => {
           position: absolute;
           top: 0;
           bottom: 0;
-          left: 50%;
+          left: 35%;
           width: 2px;
           background-color: #2563eb;
+          z-index: 0;
         }
         .doctor-signature {
           position: absolute;
@@ -45,7 +46,7 @@ const PrescriptionPrint = ({ appointment, formData, doctor }) => {
         }
         .content-area {
           display: grid;
-          grid-template-columns: 1fr 1fr;
+          grid-template-columns: 35% 65%;
           gap: 2rem;
           position: relative;
           min-height: 550px;
@@ -97,7 +98,7 @@ const PrescriptionPrint = ({ appointment, formData, doctor }) => {
           <div class="content-area">
             
             <!-- LEFT COLUMN -->
-            <div class="flex flex-col">
+            <div class="flex flex-col z-10">
               <h2 class="text-lg font-semibold text-blue-700 mb-3 border-b border-gray-300 pb-1">
                 Recommended Tests
               </h2>
@@ -114,7 +115,7 @@ const PrescriptionPrint = ({ appointment, formData, doctor }) => {
             </div>
 
             <!-- RIGHT COLUMN -->
-            <div class="flex flex-col">
+            <div class="flex flex-col z-10">
               <div class="flex items-center mb-3">
                 <span class="text-[55px] text-blue-600 font-bold mr-2 leading-none">℞</span>
                 <h2 class="text-lg font-semibold text-blue-700 border-b border-gray-300 pb-1 flex-1">
