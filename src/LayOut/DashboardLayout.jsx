@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { Link, NavLink, Outlet } from "react-router-dom";
+import { Link, Navigate, NavLink, Outlet, useNavigate } from "react-router-dom";
 import AOS from "aos";
 import "aos/dist/aos.css";
 
@@ -15,8 +15,27 @@ import {
   FaUserShield,
   FaUserCog,
 } from "react-icons/fa";
+import useAuth from "../Hook/useAuth";
 
 const DashboardLayout = () => {
+  const { logOut } = useAuth();
+  const navigate = useNavigate();
+
+  const handleLogout = () => {
+    logOut()
+      .then(() => {
+        navigate("/login")
+        alert("Logout clicked!")
+      })
+      .catch(() => {
+        alert("Logout clicked❌!")
+      })
+
+  }
+
+
+
+
   useEffect(() => {
     AOS.init({ duration: 600, easing: "ease-in-out" });
   }, []);
@@ -78,7 +97,7 @@ const DashboardLayout = () => {
         <div className="menu bg-gradient-to-b from-blue-100 to-blue-50 text-base-content min-h-full w-72 p-5 shadow-xl flex flex-col justify-between">
           {/* Top Section */}
           <div data-aos="fade-down">
-            
+
 
             {/* Navigation Links */}
             <div className="flex flex-col space-y-2">
@@ -148,7 +167,8 @@ const DashboardLayout = () => {
                 </li>
                 <li>
                   <button
-                    onClick={() => alert("Logout clicked!")}
+                    onClick={handleLogout}
+
                     className="flex items-center gap-2 text-red-600"
                   >
                     <AiOutlineLogout /> Logout
